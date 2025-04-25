@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ server_name }} - Minecraft Server Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .server-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .server-status {
+            margin-bottom: 15px;
+        }
+        .online-players {
+            color: #4CAF50;
+        }
+        .max-players {
+            color: #2196F3;
+        }
+        .latency {
+            color: #9C27B0;
+        }
+        .players-list {
+            margin-top: 20px;
+        }
+        .players-list h3 {
+            margin-bottom: 10px;
+        }
+        .players-list ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .players-list li {
+            margin: 5px 0;
+            padding: 5px;
+            background-color: #f8f8f8;
+            border-radius: 5px;
+        }
+        .no-players {
+            color: #666;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="server-name">{{ server_name }}</div>
+        <div class="server-status">
+            <span class="online-players">在线玩家：{{ plays_online if plays_online is not none else 0 }} / {{ plays_max if plays_max is not none else 0 }}</span>
+            <span class="latency">延迟：{{ latency if latency is not none else "未知" }} ms</span>
+            <span class="server-version">服务器版本：{{ server_version if server_version is not none else "未知" }}</span>
+        </div>
+        <div class="players-list">
+            <h3>在线玩家：</h3>
+            <ul>
+                {% if players_list %}
+                {% for player in players_list %}
+                <li>{{ player }}</li>
+                {% endfor %}
+                {% else %}
+                <span class="no-players">没有在线玩家。</span>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

@@ -2,6 +2,7 @@ import asyncio
 from mcstatus import JavaServer
 import socket
 import base64
+from pathlib import Path
 
 async def get_server_status(host):
     try:
@@ -19,6 +20,15 @@ async def get_server_status(host):
         #保存服务器图标
         if status.icon:
             icon_data = status.icon.split(",")[1]
+        else:
+            image_path=Path(__file__).resolve().parent.parent/'resource'/'default_icon.png'
+            with open(image_path, 'rb') as image_file:
+                # 读取图片文件内容
+                image_data = image_file.read()
+                # 对图片数据进行 Base64 编码
+                base64_encoded = base64.b64encode(image_data)
+            # 将编码后的字节数据转换为字符串
+            icon_data = base64_encoded.decode('utf-8')
 
         # 查询服务器状态
         if status.players.sample:
@@ -46,4 +56,3 @@ if __name__ == "__main__":
     result = loop.run_until_complete(get_server_status(host))
     if result:
         print(result)
-    

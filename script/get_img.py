@@ -1,14 +1,14 @@
 from PIL import Image, ImageDraw, ImageFont
 import asyncio
 import io
-import os
+from pathlib import Path
 import base64
 from typing import Optional
 
 async def load_font(font_size):
     # 尝试多路径加载
     font_paths = [
-        os.path.join(os.getcwd(), 'resource', 'msyh.ttf'),  # 原始路径
+        Path(__file__).resolve().parent.parent/'resource'/'msyh.ttf',
         'msyh.ttf',  # 当前目录
         '/usr/share/fonts/zh_CN/msyh.ttf',  # Linux常见路径
         'C:/Windows/Fonts/msyh.ttc',  # Windows路径
@@ -70,7 +70,6 @@ async def generate_server_info_image(
     ERROR_COLOR = (255, 85, 85)
     
     # 字体配置
-    ttl_path = os.path.join(os.getcwd(), 'resource', 'msyh.ttf')
     try:
         title_font = await load_font(30)
         text_font = await load_font(20)
@@ -137,23 +136,3 @@ async def generate_server_info_image(
 
     # 返回base64 bytes
     return img_base64
-
-# 使用示例
-async def main():
-    # 示例Base64图标（实际需要完整数据）
-    base64_icon = "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJ..."  # 简化的示例
-    
-    result = await generate_server_info_image(
-        players_list=["玩家1", "玩家2", "Steve", "Alex"],
-        latency=120,
-        server_name="我的世界服务器",
-        plays_max=20,
-        plays_online=4,
-        server_version="1.20.1",
-        icon_base64=base64_icon
-    )
-    # 可以直接用于HTML展示
-    # print(f'<img src="{result}">')
-
-if __name__ == "__main__":
-    asyncio.run(main())

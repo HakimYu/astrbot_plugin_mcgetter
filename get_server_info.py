@@ -1,7 +1,7 @@
 import asyncio
 from mcstatus import JavaServer
 import socket
-
+import base64
 
 async def get_server_status(host):
     try:
@@ -16,6 +16,10 @@ async def get_server_status(host):
         plays_online = status.players.online
         server_version = status.version.name
 
+        #保存服务器图标
+        if status.icon:
+            icon_data = status.icon.split(",")[1]
+
         # 查询服务器状态
         if status.players.sample:
             for player in status.players.sample:
@@ -27,6 +31,7 @@ async def get_server_status(host):
             "plays_max": plays_max,#最大玩家数
             "plays_online": plays_online,#在线玩家数
             "server_version": server_version,#服务器游戏版本
+            "icon_base64":icon_data,#服务器图标base64
         }
 
     except (socket.gaierror, ConnectionRefusedError, asyncio.TimeoutError) as e:

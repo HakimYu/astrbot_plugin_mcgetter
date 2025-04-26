@@ -3,8 +3,8 @@ from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
 from astrbot.api import logger
 import astrbot.core.message.components as Comp
-from .get_server_info import get_server_status
-from .get_img import generate_server_info_image
+from script.get_server_info import get_server_status
+from script.get_img import generate_server_info_image
 
 
 @register("astrbot_mcgetter", "QiChen", "查询mc服务器信息和玩家列表,渲染为图片", "1.0.0")

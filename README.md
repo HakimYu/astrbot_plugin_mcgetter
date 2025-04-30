@@ -1,7 +1,13 @@
 # helloworld
 
+</div>
 <div align="center">
+
+
+
+
 ![:name](https://count.getloli.com/@astrbot_mcgetter?name=astrbot_mcgetter&theme=minecraft&padding=7&offset=0&align=top&scale=1&pixelated=1&darkmode=auto)
+
 </div>
 
 AstrBot 插件用于查询mc信息并使用图片展示

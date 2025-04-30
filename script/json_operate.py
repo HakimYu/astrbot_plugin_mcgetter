@@ -24,6 +24,8 @@ async def read_json(json_path: str):
 
 
 async def add_data(json_path: str, name: str, host: str):
+    if name in data:
+        return False
     data = await read_json(json_path)
     new_data = {
         name: {
@@ -33,6 +35,7 @@ async def add_data(json_path: str, name: str, host: str):
     }
     data.update(new_data)
     await write_json(json_path, data)
+    return True
 
 
 async def del_data(json_path: str, name: str):
@@ -40,3 +43,5 @@ async def del_data(json_path: str, name: str):
     if name in data:
         del data[name]
         await write_json(json_path, data)
+        return True
+    return False

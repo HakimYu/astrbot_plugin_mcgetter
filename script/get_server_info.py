@@ -10,6 +10,7 @@ async def get_server_status(host):
         server = await JavaServer.async_lookup(host)
         # 使用异步方法查询服务器状态
         status = await server.async_status()
+        print(status)
 
         players_list = []
         latency = int(status.latency)
@@ -48,11 +49,16 @@ async def get_server_status(host):
         print(f"查询服务器状态时出错: {e}")
         return None
 
-
-# 示例调用
-if __name__ == "__main__":
-    host = "p3.ytonidc.com:36008"  # 替换为实际的服务器地址和端口
-    loop = asyncio.get_event_loop()
-    result = loop.run_until_complete(get_server_status(host))
+async def main():
+    host = "csu-mc.org"  # 请替换为实际的服务器地址
+    result = await get_server_status(host)
     if result:
-        print(result)
+        print("服务器状态信息:")
+        for key, value in result.items():
+            print(f"{key}: {value}")
+    else:
+        print("未能获取到服务器状态信息。")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

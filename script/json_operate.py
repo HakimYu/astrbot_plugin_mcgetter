@@ -24,9 +24,9 @@ async def read_json(json_path: str):
 
 
 async def add_data(json_path: str, name: str, host: str):
+    data = await read_json(json_path)
     if name in data:
         return False
-    data = await read_json(json_path)
     new_data = {
         name: {
             'name': name,

@@ -124,7 +124,8 @@ class MyPlugin(Star):
     # 获取 json 配置文件路径
     async def get_json_path(self, group_id: str):
         logger.info(f"开始获取群号 {group_id} 的 JSON 文件路径")
-        json_path = StarTools.get_data_dir("astrbot_mcgetter")
+        data_path = StarTools.get_data_dir("astrbot_mcgetter")
+        json_path=data_path/f'{group_id}.json'
         json_path.parent.mkdir(parents=True, exist_ok=True)
         logger.info(f"群号 {group_id} 的 JSON 文件路径: {json_path}")
         return json_path

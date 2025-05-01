@@ -1,4 +1,4 @@
-# helloworld
+# astrbot_mcgetter
 
 </div>
 <div align="center">

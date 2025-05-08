@@ -5,94 +5,114 @@ import socket
 import base64
 from pathlib import Path
 import re
+from typing import Optional, Dict, List, Any
+import logging
 
-csu_host = 'csu-mc.org'
-csu_get_players = 'https://map.magicalsheep.cn/tiles/players.json'
+# 配置日志
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
+# 常量配置
+CSU_HOST = 'csu-mc.org'
+CSU_PLAYERS_URL = 'https://map.magicalsheep.cn/tiles/players.json'
+DEFAULT_ICON_PATH = Path(__file__).resolve().parent.parent / 'resource' / 'default_icon.png'
 
-async def get_server_status(host):
+async def get_server_status(host: str) -> Optional[Dict[str, Any]]:
+    """
+    异步获取Minecraft服务器状态信息
+
+    Args:
+        host: 服务器主机名或IP地址
+
+    Returns:
+        包含服务器信息的字典，如果获取失败则返回None
+    """
     try:
-        # 调用mcstatus获取服务器信息
         server = await JavaServer.async_lookup(host)
-        # 使用异步方法查询服务器状态
         status = await server.async_status()
-        players_list = []
-        latency = int(status.latency)
-        plays_max = status.players.max
-        plays_online = status.players.online
-        server_version = status.version.name
-
-        # 保存服务器图标
-        if status.icon:
-            icon_data = status.icon.split(",")[1]
-        else:
-            image_path = Path(__file__).resolve().parent.parent / 'resource' / 'default_icon.png'
-            with open(image_path, 'rb') as image_file:
-                # 读取图片文件内容
-                image_data = image_file.read()
-                # 对图片数据进行 Base64 编码
-                base64_encoded = base64.b64encode(image_data)
-            # 将编码后的字节数据转换为字符串
-            icon_data = base64_encoded.decode('utf-8')
-
-        # 查询服务器状态
-        if status.players.sample:
-            for player in status.players.sample:
-                players_list.append(player.name)
         
-        #自定义查询
-        if host == csu_host:
-                players_list = await fetch_players_names(csu_get_players)
+        # 获取玩家列表
+        players_list = []
+        if status.players.sample:
+            players_list = [player.name for player in status.players.sample]
+        
+        # 特殊处理CSU服务器
+        if host == CSU_HOST:
+            players_list = await fetch_players_names(CSU_PLAYERS_URL)
+
+        # 获取服务器图标
+        icon_data = await get_server_icon(status.icon)
+
         return {
-            "players_list": players_list,  # 玩家昵称列表
-            "latency": latency,  # 延迟
-            "plays_max": plays_max,  # 最大玩家数
-            "plays_online": plays_online,  # 在线玩家数
-            "server_version": server_version,  # 服务器游戏版本
-            "icon_base64": icon_data,  # 服务器图标base64
+            "players_list": players_list,
+            "latency": int(status.latency),
+            "plays_max": status.players.max,
+            "plays_online": status.players.online,
+            "server_version": status.version.name,
+            "icon_base64": icon_data,
         }
 
     except (socket.gaierror, ConnectionRefusedError, asyncio.TimeoutError) as e:
-        print(f"查询服务器状态时出错: {e}")
+        logger.error(f"查询服务器状态时出错: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"发生未知错误: {e}")
         return None
 
+async def get_server_icon(icon_data: Optional[str]) -> str:
+    """
+    获取服务器图标的base64编码
 
-async def main():
-    host = "csu-mc.org"  # 请替换为实际的服务器地址
+    Args:
+        icon_data: 服务器图标的base64字符串
+
+    Returns:
+        图标的base64编码字符串
+    """
+    if icon_data:
+        return icon_data.split(",")[1]
+    
+    try:
+        with open(DEFAULT_ICON_PATH, 'rb') as image_file:
+            return base64.b64encode(image_file.read()).decode('utf-8')
+    except Exception as e:
+        logger.error(f"读取默认图标失败: {e}")
+        return ""
+
+async def fetch_players_names(url: str) -> List[str]:
+    """
+    异步获取并解析玩家名称列表，过滤掉bot玩家
+
+    Args:
+        url: 数据接口URL
+
+    Returns:
+        过滤后的玩家名称列表
+
+    Raises:
+        ValueError: 当请求失败时抛出
+    """
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status != 200:
+                    raise ValueError(f"请求失败，状态码: {response.status}")
+
+                data = await response.json()
+                names = [player["name"] for player in data.get("players", [])]
+                return [name for name in names if not re.match(r'^bot_', name)]
+    except Exception as e:
+        logger.error(f"获取玩家列表失败: {e}")
+        return []
+
+async def main() -> None:
+    """主函数，用于测试服务器状态获取"""
+    host = CSU_HOST
     result = await get_server_status(host)
     if result:
-        print(result['players_list'])
+        logger.info(f"服务器状态: {result}")
     else:
-        print("未获取到服务器状态信息")
-
-
-# 为csu定制
-async def fetch_players_names(url: str) -> list[str]:
-    """
-    异步获取并解析玩家名称列表并且屏蔽bot_开头的玩家名称
-
-    :param url: 数据接口URL
-    :return: 玩家名称列表
-    """
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            # 检查响应状态码
-            if response.status != 200:
-                raise ValueError(f"请求失败，状态码: {response.status}")
-
-            # 解析JSON数据
-            data = await response.json()
-
-            # 提取所有name字段
-            names = [player["name"] for player in data.get("players", [])]
-
-            # 使用正则表达式过滤掉以 'bot_' 开头的名称
-            pattern = re.compile(r'^bot_')
-
-            filtered_names = [name for name in names if not pattern.match(name)]
-
-            return filtered_names
-
+        logger.error("未获取到服务器状态信息")
 
 if __name__ == "__main__":
     asyncio.run(main())

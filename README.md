@@ -28,3 +28,7 @@ AstrBot 插件用于查询mc信息并使用图片展示
 # 支持
 
 [帮助文档](https://astrbot.app)
+
+# TODO
+
+## 玩家名称颜色随在线天数改变

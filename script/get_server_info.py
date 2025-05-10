@@ -5,6 +5,7 @@ import socket
 import base64
 from pathlib import Path
 import re
+from astrbot.api import logger
 
 csu_host = 'csu-mc.org'
 csu_get_players = 'https://map.magicalsheep.cn/tiles/players.json'
@@ -43,6 +44,10 @@ async def get_server_status(host):
         #自定义查询
         if host == csu_host:
                 players_list = await fetch_players_names(csu_get_players)
+                
+        # 对玩家列表进行字母顺序排序
+        players_list.sort()
+        
         return {
             "players_list": players_list,  # 玩家昵称列表
             "latency": latency,  # 延迟

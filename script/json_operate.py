@@ -3,7 +3,7 @@ import asyncio
 from pathlib import Path
 import aiofiles
 from typing import Dict, Any, Optional
-import logging
+from astrbot.api import logger
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)

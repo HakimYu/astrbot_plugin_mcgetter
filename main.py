@@ -65,25 +65,39 @@ class MyPlugin(Star):
         logger.info("开始执行 mc 命令")
         try:
             group_id = event.get_group_id()
+            logger.info(f"获取到群组ID: {group_id}")
+            
             json_path = await self.get_json_path(group_id)
+            logger.info(f"JSON文件路径: {json_path}")
+            
             json_data = await read_json(json_path)
+            logger.info(f"读取到的JSON数据: {json_data}")
+            
+            if not json_data:
+                logger.warning("JSON数据为空")
+                yield event.plain_result("请先使用 /mcadd 添加服务器")
+                return
             
             message_chain: List[Comp.Image] = []
             for name, server_info in json_data.items():
                 try:
+                    logger.info(f"正在处理服务器: {name}, 信息: {server_info}")
                     mcinfo_img = await self.get_img(server_info['name'], server_info['host'])
                     if mcinfo_img:
                         message_chain.append(Comp.Image.fromBase64(mcinfo_img))
                         logger.info(f"成功添加图片到消息链，服务器名称: {name}")
+                    else:
+                        logger.warning(f"获取服务器 {name} 的图片失败")
                 except Exception as e:
                     logger.error(f"处理服务器 {name} 时出错: {e}")
                     continue
 
             if message_chain:
+                logger.info(f"成功生成消息链，包含 {len(message_chain)} 张图片")
                 yield event.chain_result(message_chain)
             else:
                 logger.warning("没有可用的服务器信息")
-                yield event.plain_result("没有可用的服务器信息")
+                yield event.plain_result("没有可用的服务器信息，请检查服务器是否在线")
                 
         except Exception as e:
             logger.error(f"执行 mc 命令时出错: {e}")
@@ -155,29 +169,24 @@ class MyPlugin(Star):
         """
         logger.info(f"开始获取服务器 {server_name} 的图片，主机地址: {host}")
         try:
-            # 设置3秒超时
-            async with asyncio.timeout(3):
-                info = await get_server_status(host)
-                if not info:
-                    logger.error(f"无法获取服务器 {server_name} 的状态信息")
-                    return None
+            info = await get_server_status(host)
+            if not info:
+                logger.error(f"无法获取服务器 {server_name} 的状态信息")
+                return None
 
-                info['server_name'] = server_name
-                mcinfo_img = await generate_server_info_image(
-                    players_list=info['players_list'],
-                    latency=info['latency'],
-                    server_name=info['server_name'],
-                    plays_max=info['plays_max'],
-                    plays_online=info['plays_online'],
-                    server_version=info['server_version'],
-                    icon_base64=info['icon_base64']
-                )
-                logger.info(f"成功生成服务器 {server_name} 的图片")
-                return mcinfo_img
+            info['server_name'] = server_name
+            mcinfo_img = await generate_server_info_image(
+                players_list=info['players_list'],
+                latency=info['latency'],
+                server_name=info['server_name'],
+                plays_max=info['plays_max'],
+                plays_online=info['plays_online'],
+                server_version=info['server_version'],
+                icon_base64=info['icon_base64']
+            )
+            logger.info(f"成功生成服务器 {server_name} 的图片")
+            return mcinfo_img
             
-        except asyncio.TimeoutError:
-            logger.error(f"获取服务器 {server_name} 的图片超时")
-            return None
         except Exception as e:
             logger.error(f"获取服务器 {server_name} 的图片时出错: {e}")
             return None

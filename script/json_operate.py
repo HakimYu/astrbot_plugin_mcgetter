@@ -3,7 +3,7 @@ import asyncio
 from pathlib import Path
 import aiofiles
 from typing import Dict, Any, Optional
-from astrbot.api import logger
+import logging
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -54,14 +54,15 @@ async def read_json(json_path: str) -> Dict[str, Any]:
 
         async with aiofiles.open(json_path, 'r', encoding='utf-8') as f:
             content = await f.read()
+            logger.info(f"读取到的JSON内容: {content}")
             data = json.loads(content)
-            logger.info(f"成功读取JSON文件: {json_path}")
+            logger.info(f"成功读取JSON文件: {json_path}, 数据: {data}")
             return data
     except json.JSONDecodeError as e:
-        logger.error(f"JSON解析失败: {e}")
+        logger.error(f"JSON解析失败: {e}, 文件内容: {content if 'content' in locals() else '无法读取'}")
         raise json.JSONDecodeError(f"JSON解析失败: {e}", e.doc, e.pos)
     except Exception as e:
-        logger.error(f"读取JSON文件失败: {e}")
+        logger.error(f"读取JSON文件失败: {e}, 文件路径: {json_path}")
         raise IOError(f"读取JSON文件失败: {e}")
 
 async def add_data(json_path: str, name: str, host: str) -> bool:

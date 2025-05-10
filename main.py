@@ -7,6 +7,7 @@ from astrbot.api import logger
 from .script.get_server_info import get_server_status
 from .script.get_img import generate_server_info_image
 from .script.json_operate import read_json, add_data, del_data
+import asyncio
 
 # 常量定义
 HELP_INFO = """
@@ -23,7 +24,7 @@ HELP_INFO = """
 --删除服务器
 """
 
-@register("astrbot_mcgetter", "QiChen", "查询mc服务器信息和玩家列表,渲染为图片", "1.0.0")
+@register("astrbot_mcgetter", "QiChen", "查询mc服务器信息和玩家列表,渲染为图片", "1.1.0")
 class MyPlugin(Star):
     """Minecraft服务器信息查询插件"""
     
@@ -154,24 +155,29 @@ class MyPlugin(Star):
         """
         logger.info(f"开始获取服务器 {server_name} 的图片，主机地址: {host}")
         try:
-            info = await get_server_status(host)
-            if not info:
-                logger.error(f"无法获取服务器 {server_name} 的状态信息")
-                return None
+            # 设置3秒超时
+            async with asyncio.timeout(3):
+                info = await get_server_status(host)
+                if not info:
+                    logger.error(f"无法获取服务器 {server_name} 的状态信息")
+                    return None
 
-            info['server_name'] = server_name
-            mcinfo_img = await generate_server_info_image(
-                players_list=info['players_list'],
-                latency=info['latency'],
-                server_name=info['server_name'],
-                plays_max=info['plays_max'],
-                plays_online=info['plays_online'],
-                server_version=info['server_version'],
-                icon_base64=info['icon_base64']
-            )
-            logger.info(f"成功生成服务器 {server_name} 的图片")
-            return mcinfo_img
+                info['server_name'] = server_name
+                mcinfo_img = await generate_server_info_image(
+                    players_list=info['players_list'],
+                    latency=info['latency'],
+                    server_name=info['server_name'],
+                    plays_max=info['plays_max'],
+                    plays_online=info['plays_online'],
+                    server_version=info['server_version'],
+                    icon_base64=info['icon_base64']
+                )
+                logger.info(f"成功生成服务器 {server_name} 的图片")
+                return mcinfo_img
             
+        except asyncio.TimeoutError:
+            logger.error(f"获取服务器 {server_name} 的图片超时")
+            return None
         except Exception as e:
             logger.error(f"获取服务器 {server_name} 的图片时出错: {e}")
             return None

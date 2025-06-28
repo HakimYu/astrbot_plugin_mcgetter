@@ -29,7 +29,7 @@ HELP_INFO = """
 --删除服务器
 """
 
-@register("astrbot_mcgetter", "QiChen", "查询mc服务器信息和玩家列表,渲染为图片", "1.1.0")
+@register("astrbot_mcgetter", "QiChen", "查询mc服务器信息和玩家列表,渲染为图片", "1.2.0")
 class MyPlugin(Star):
     """Minecraft服务器信息查询插件"""
     

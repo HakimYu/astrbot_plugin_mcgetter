@@ -8,6 +8,7 @@ from .script.get_server_info import get_server_status
 from .script.get_img import generate_server_info_image
 from .script.json_operate import read_json, add_data, del_data
 import asyncio
+import re
 
 # 常量定义
 HELP_INFO = """
@@ -17,8 +18,9 @@ HELP_INFO = """
 /mc   
 --查询保存的服务器
 
-/mcadd 服务器名称 服务器地址 
+/mcadd 服务器名称 服务器地址 [force]
 --添加要查询的服务器
+--force: 可选参数，设为True时跳过预查询检查强制添加
 
 /mcdel 服务器名称 
 --删除服务器
@@ -104,7 +106,7 @@ class MyPlugin(Star):
             yield event.plain_result("查询服务器信息时发生错误")
 
     @filter.command("mcadd")
-    async def mcadd(self, event: AstrMessageEvent, name: str, host: str) -> MessageEventResult:
+    async def mcadd(self, event: AstrMessageEvent, name: str, host: str, force: bool = False) -> MessageEventResult:
         """
         添加新的服务器
 
@@ -112,15 +114,38 @@ class MyPlugin(Star):
             event: 消息事件
             name: 服务器名称
             host: 服务器地址
+            force: 是否强制添加（跳过预查询检查）
 
         Returns:
             操作结果消息
         """
-        logger.info(f"开始执行 mcadd 命令: {name} -> {host}")
+        logger.info(f"开始执行 mcadd 命令: {name} -> {host}, force: {force}")
+        
         try:
+            # 检查host合法性
+            if not re.match(r'^[a-zA-Z0-9.,:]+$', host):
+                yield event.plain_result("服务器地址格式不正确，只能包含字母、数字和符号.,:")
+                return
+            elif await get_server_status(host) is None and not force:
+                yield event.plain_result("预查询失败，请检查服务器是否在线或地址是否正确，或在完整的/mcadd命令后加上True 强制添加")
+                return
+                
             group_id = event.get_group_id()
             json_path = await self.get_json_path(group_id)
             
+            # 检查当前地址是否已存在
+            try:
+                json_data = await read_json(json_path)
+                if json_data:
+                    for existing_name, server_info in json_data.items():
+                        if server_info['host'] == host:
+                            yield event.plain_result(f"已存在相同地址的服务器 {existing_name}")
+                            return
+            except Exception as e:
+                logger.error(f"检查服务器地址时出错: {e}")
+                yield event.plain_result("检查服务器地址时发生错误")
+                return
+                
             if await add_data(json_path, name, host):
                 yield event.plain_result(f"成功添加服务器 {name}")
             else:

@@ -22,6 +22,9 @@ HELP_INFO = """
 --添加要查询的服务器
 --force: 可选参数，设为True时跳过预查询检查强制添加
 
+/mcget 服务器名称
+--获取指定服务器的地址信息
+
 /mcdel 服务器名称 
 --删除服务器
 """
@@ -180,6 +183,24 @@ class MyPlugin(Star):
         except Exception as e:
             logger.error(f"执行 mcdel 命令时出错: {e}")
             yield event.plain_result("删除服务器时发生错误")
+
+    @filter.command("mcget")
+    async def mcget(self, event: AstrMessageEvent, name: str) -> MessageEventResult:
+        """
+        获取指定服务器的信息
+        """
+        group_id = event.get_group_id()
+        json_path = await self.get_json_path(group_id)
+        json_data = await read_json(json_path)
+        if not json_data:
+            yield event.plain_result("没有可用的服务器信息")
+            return
+        if name not in json_data:
+            yield event.plain_result(f"没有找到服务器 {name}")
+            return
+        server_info = json_data[name]
+        yield event.plain_result(f"{server_info['name']} 的地址是:")
+        yield event.plain_result(f"{server_info['host']}")
 
     async def get_img(self, server_name: str, host: str) -> Optional[str]:
         """

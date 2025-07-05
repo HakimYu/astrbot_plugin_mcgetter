@@ -27,7 +27,8 @@ async def get_server_status(host):
         if status.icon:
             icon_data = status.icon.split(",")[1]
         else:
-            image_path = Path(__file__).resolve().parent.parent / 'resource' / 'default_icon.png'
+            image_path = Path(__file__).resolve().parent.parent / \
+                'resource' / 'default_icon.png'
             with open(image_path, 'rb') as image_file:
                 # 读取图片文件内容
                 image_data = image_file.read()
@@ -36,18 +37,26 @@ async def get_server_status(host):
             # 将编码后的字节数据转换为字符串
             icon_data = base64_encoded.decode('utf-8')
 
-        # 查询服务器状态
-        if status.players.sample:
-            for player in status.players.sample:
-                players_list.append(player.name)
-        
-        #自定义查询
-        if host == csu_host:
-                players_list = await fetch_players_names(csu_get_players)
-                
+        logger.debug(f"服务器status: {status}")
+
+        # 尝试使用query获取完整的玩家列表
+        try:
+            query = await server.async_query()
+            if query.players.names:
+                players_list = query.players.names
+            elif status.players.sample:  # 如果query失败，尝试使用status中的sample
+                for player in status.players.sample:
+                    players_list.append(player.name)
+        except Exception as e:
+            logger.warning(f"使用query获取玩家列表失败: {e}")
+            # 如果query失败，仍然尝试使用status中的sample
+            if status.players.sample:
+                for player in status.players.sample:
+                    players_list.append(player.name)
+
         # 对玩家列表进行字母顺序排序
         players_list.sort()
-        
+
         return {
             "players_list": players_list,  # 玩家昵称列表
             "latency": latency,  # 延迟
@@ -100,7 +109,8 @@ async def fetch_players_names(url: str) -> list[str]:
             # 使用正则表达式过滤掉以 'bot_' 开头的名称
             pattern = re.compile(r'^bot_')
 
-            filtered_names = [name for name in names if not pattern.match(name)]
+            filtered_names = [
+                name for name in names if not pattern.match(name)]
 
             return filtered_names
 
